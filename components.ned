@@ -45,14 +45,14 @@ simple baseEtend
 module drone extends WirelessHost
 {
     parameters:
-        int drone_ID; //this drones ID
+        int drone_ID=0; //this drones ID
         int related_BS_ID=-1; //each drone is related to one base station
         string related_targets; //each drone servers several targets
         int num_targets=0; //each drone servers several targets
-        double x_cor1;
-        double y_cor1;
-        double x_cor2;
-        double y_cor2;
+        double x_cor1=0;
+        double y_cor1=0;
+        double x_cor2=0;
+        double y_cor2=0;
         int isfree=0;
         
         submodules:
@@ -85,7 +85,7 @@ module cs extends WirelessHost
 
         
     parameters:
-		string related_drones; //each BS servers several drones      
+		string related_drones=""; //each BS servers several drones      
         //string related_bs;       
  
       submodules:
@@ -99,5 +99,4 @@ module cs extends WirelessHost
     //containes the wirelessHost mod
 
 }
-
 
