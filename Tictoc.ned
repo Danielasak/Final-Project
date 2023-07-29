@@ -50,18 +50,25 @@ network Tictoc
     parameters:
         @display("bgb=600,600;bgi=background/streetmap,s");
         @figure[title](type=label; pos=0,-1; anchor=sw; color=darkblue);
-        string targetPosition;
-        string basePosition;
+        string targetPosition="";
+        string alltargetPosition="";
+        string basePosition="";
         int baseNumber = 0;
         int counter = 2;
-        int counter_all_drones=2;
-        int MaxTarget = 15;
-        int targetToDelet;
+        int counter_all_drones = 2;
+        int MaxTarget;
+        int targetToDelet=0;
         double base_r = 100;
-        int drones=3;
-        int Host1=0;
-		int Host2=0;
-		int Host3=0;
+        int drones = 5;
+        int Host1 = 0;
+        int Host2 = 0;
+        int Host3 = 0;
+        int Host4 = 0;
+        int Host5 = 0;
+        int busyDrones=0;
+
+        
+
     submodules:
         target1: target {
             @display("i=status/stop;p=176.368,410.72");
@@ -84,10 +91,17 @@ network Tictoc
         host2: drone {
             @display("p=228.312,280.256;i=misc/drone");
         }
-         host3: drone {
+        host3: drone {
             @display("p=100.312,280.256;i=misc/drone");
         }
-        
+        host4: drone {
+            @display("p=228.312,240.392;i=misc/drone");
+        }
+        host5: drone {
+            @display("p=228.312,240.392;i=misc/drone");
+        }
+
+
 
         ControlStation1: cs {
             @display("p=548.432,204.152;i=misc/desktoppc2");
