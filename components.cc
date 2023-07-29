@@ -14,6 +14,8 @@
 // 
 
 #include "components.h"
+#include <string>
+#include <bits/stdc++.h>
 #include <iostream>
 #include <string.h>
 #include <algorithm>
@@ -27,25 +29,53 @@ Define_Module(baseEtend);
 Define_Module(csEtend);
 Define_Module(testudpApp);
 
+
+
+struct point {
+    double x;
+    double y;
+};
+
+
  static double distance(double x1,double x2,double y1 ,double y2)
 {
     return sqrt(pow(x1-x2,2)+pow(y1- y2,2));
 }
+
+
+
+ static void customSplit(string str, char separator, vector < string >& strings) {
+     int startIndex = 0, endIndex = 0;
+     for (int i = 0; i <= str.size(); i++) {
+
+         // If we reached the end of the word or the end of the input.
+         if (str[i] == separator || i == str.size()) {
+             endIndex = i;
+             string temp;
+             temp.append(str, startIndex, endIndex - startIndex);
+             strings.push_back(temp);
+             startIndex = endIndex + 1;
+         }
+     }
+ }
 
 void target::initialize()
 {
     cDisplayString& cd= getDisplayString();
     string str(cd.str());
     size_t pos=str.find("p=");
-
+    string str3="";
     string str2=str.substr(pos+2);
     str2=str2+";";
+    str3=str2+getParentModule()->par("alltargetPosition").stdstringValue();
     str2=str2+getParentModule()->par("targetPosition").stdstringValue();
+
     getParentModule()->par("targetPosition").setStringValue(str2);
+    getParentModule()->par("alltargetPosition").setStringValue(str3);
     string temp= getParentModule()->par("targetPosition").stdstringValue();
     cMessage *msg = new cMessage("SelfMessage");
     //cMessage *msg = new cMessage("SelfMessage");
-    double time = uniform(10, 30);
+    double time = uniform(10, 20);
     scheduleAt(simTime() + time, msg);
 
 }
@@ -415,8 +445,178 @@ void baseEtend::handleMessage(cMessage *msg)
     // just send back the message we received
 }
 
+int csEtend::kCenter()
+{
+    double pos_base_x;
+    double pos_base_y;
+    double target_x;
+    double target_y;
+    double dis;
+    string targets=getParentModule()->getParentModule()->par("alltargetPosition").stdstringValue();
+    string cord_x;
+    string cord_y;
+    stringstream targets_Stream;
+    stringstream next_Stream(targets);
+    string target_pos;
+    string base_pos;
+    string test2;
+    int counter=0;
+    getline(next_Stream, base_pos, ';');
+    while(base_pos!="")
+    {
+        counter++;
+        stringstream base_Stream1(base_pos);
+        getline(base_Stream1,cord_x,',');
+        getline(base_Stream1, cord_y);
+        pos_base_x=stod(cord_x);
+        pos_base_y=stod(cord_y);
+        test2=next_Stream.str();
+        targets_Stream<<next_Stream.str();
+        string test=targets_Stream.str();
+        next_Stream.str("");
+        while (getline(targets_Stream, target_pos, ';'))
+        {
+            stringstream target_Stream1(target_pos);
+
+
+            getline(target_Stream1, cord_x,',');
+            getline(target_Stream1, cord_y);
+
+            target_x=stod(cord_x);
+            target_y=stod(cord_y);
+
+            dis=distance(pos_base_x,target_x,pos_base_y,target_y);
+            if(dis>100)
+            {
+                target_pos=target_pos+';';
+                next_Stream<<target_pos;
+                test2=next_Stream.str();
+            }
+        }
+        targets_Stream.str("");
+        targets_Stream.clear();
+        base_pos="";
+        getline(next_Stream, base_pos, ';');
+
+    }
+    return counter;
+
+
+}
+
+
+
+int csEtend::kMean()
+{
+    double mindis=10000;
+    int flag=1;
+    int cluster;
+    string targets=getParentModule()->getParentModule()->par("alltargetPosition").stdstringValue();
+    vector < string > strings;
+    customSplit(targets,';',strings);
+    vector <point> alltar;
+    vector < point > bases;
+    int k=1;
+
+
+
+    for(int i=0;i<strings.size()-1;i++)
+      {
+          vector < string > point1;
+          customSplit(strings[i],',',point1);
+          point temp;
+          temp.x=stod(point1[0]);
+          temp.y=stod(point1[1]);
+          alltar.push_back(temp);
+      }
+
+    while(flag==1)
+    {
+        vector<point> clusters [k];
+
+
+
+        for(int i=0;i<k;i++)
+        {
+            bases.push_back(alltar[i]);
+        }
+
+        for(int i=0;i<alltar.size();i++)
+        {
+
+            for(int j=0;j<bases.size();j++)
+            {
+                double currdis=distance(alltar[i].x,bases[j].x,alltar[i].y,bases[j].y);
+
+                if(mindis>currdis)
+                {
+                    mindis=currdis;
+                    cluster=j;
+
+                }
+            }
+            mindis=10000;
+            clusters[cluster].push_back(alltar[i]);
+        }
+        flag=0;
+        for(int i=0;i<k;i++)
+        {
+            for(int j=0;j<clusters[i].size();j++)
+            {
+                if(distance(clusters[i][j].x,bases[i].x,clusters[i][j].y,bases[i].y)>100)
+                    flag=1;
+            }
+
+
+        }
+        bases.clear();
+        k++;
+    }
+
+    return k;
+}
+
+
+void csEtend::finish()
+{
+    int numBase=getParentModule()->getParentModule()->par("baseNumber").intValue();
+    int maxBase=getParentModule()->getParentModule()->par("MaxTarget").intValue();
+    Basecount.collect(numBase);
+    basevector.record(numBase);
+    Basecount.recordAs("baseNumber");
+    int k_center_res=kCenter();
+    int k_mean_res=kMean();
+    FILE *fptr;
+    FILE *fptr2;
+    int dronNumber;
+    int d1=getParentModule()->getParentModule()->par("Host1").intValue();
+    int d2=getParentModule()->getParentModule()->par("Host2").intValue();
+    int d3=getParentModule()->getParentModule()->par("Host3").intValue();
+    int d4=getParentModule()->getParentModule()->par("Host4").intValue();
+    int d5=getParentModule()->getParentModule()->par("Host5").intValue();
+    d1=1-d1;
+    d2=1-d2;
+    d3=1-d3;
+    d4=1-d4;
+    d5=1-d5;
+    dronNumber=d1+d2+d3+d4+d5;
+    double prce=dronNumber/5.0;
+    fptr2 = fopen("/home/cse_student/omnet-workspace/finalprojectyd/out/log2.txt","a");
+    fprintf(fptr2,"%d,%f\n",maxBase,prce);
+    fptr = fopen("/home/cse_student/omnet-workspace/finalprojectyd/out/log.txt","a");
+    fprintf(fptr,"%d,%d,%d,%d\n",maxBase,numBase,k_center_res,k_mean_res);
+    fclose(fptr);
+    fclose(fptr2);
+
+
+}
+
+
+
 void csEtend::initialize()
 {
+    Basecount.setName("basecount");
+    basevector.setName("basecountvector");
     cMessage *msg = new cMessage("SelfMessage");
     cMessage *msg2 = new cMessage("SelfMessage");
     double time = uniform(10, 30);
@@ -476,10 +676,6 @@ int csEtend::isbsCover(string new_target)
      }
 
 
-    cout<<"\ntest10\n";
-    cout<<cord_x;
-    cout<<"\n";
-    cout<<cord_y;
     pos_base_x=stod(cord_x);
     pos_base_y=stod(cord_y);
     //////
@@ -525,11 +721,6 @@ int csEtend::isbsCover(string new_target)
             cordinets=pos_all_base.substr(pos_base_old+1, pos_base_new-pos_base_old-1);
             psik_pos=cordinets.find(",");
 
-            //cout<<"\ntest20\n";
-            //cout<<cordinets.substr(0, psik_pos);
-           // cout<<"\n";
-           // cout<<cordinets.substr(psik_pos+1);
-           // cout<<"\n";
 
             string ps_bs_x=cordinets.substr(0, psik_pos);
             string ps_bs_y=cordinets.substr(psik_pos+1);
@@ -666,10 +857,6 @@ void csEtend::handleMessage(cMessage *msg)
                     size_t psik_pos=target.find(",");
                     string cord_x=target.substr(0, psik_pos);
                     string cord_y=target.substr(psik_pos+1,target.length()-psik_pos-1);
-                    cout<<"\ntest1\n";
-                    cout<<cord_x;
-                    cout<<"\n";
-                    cout<<cord_y;
 
 
 
@@ -699,8 +886,8 @@ void csEtend::handleMessage(cMessage *msg)
 
                     posx=stod(cord_x);
                     posy=stod(cord_y);
-                    posx=posx+15;
-                    posy=posy+15;
+                    posx=posx+30;
+                    posy=posy+30;
                     displaybs+=to_string(posx);
                     displaybs+=',';
                     displaybs+=to_string(posy);
