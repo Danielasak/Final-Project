@@ -57,10 +57,20 @@ class baseEtend : public cSimpleModule
 
 class csEtend : public cSimpleModule
 {
+
+  private:
+    cHistogram Basecount;
+    cOutVector basevector;
+
+
   protected:
+
     virtual void initialize();
     virtual void handleMessage(cMessage *msg);
     virtual int isbsCover(string new_target);
+    virtual int kCenter();
+    virtual int kMean();
+    virtual void finish();
 };
 
 class  testudpApp:public cSimpleModule
